@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: bff-gateway
+  profiles:
+    default: dev
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: bff-gateway
+            client-secret: ${KC_CLIENT_SECRET}
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9000/realms/core-platform
+
+server:
+  port: 9010
+
