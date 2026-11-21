@@ -13,4 +13,20 @@ allprojects {
 
 subprojects {
     tasks.register("prepareKotlinBuildScriptModel")
+
+    pluginManager.withPlugin("java") {
+        configure<JavaPluginExtension> {
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(21))
+            }
+        }
+
+        tasks.withType<JavaCompile> {
+            options.compilerArgs.add("-parameters")
+        }
+
+        tasks.withType<Test> {
+            useJUnitPlatform()
+        }
+    }
 }
