@@ -16,6 +16,7 @@ dependencies {
 
     // Security
     api(libs.spring.security.core)
+    api(libs.spring.boot.starter.oauth2.resource.server)
 
     // Redis (Lettuce)
     api(libs.spring.boot.starter.data.redis)
