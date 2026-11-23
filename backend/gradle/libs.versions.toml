@@ -5,6 +5,7 @@ spring-cloud = "2024.0.0"
 lombok = "1.18.36"
 caffeine = "3.1.8"
 resilience4j = "2.2.0"
+testcontainers = "1.20.4"
 flyway = "10.22.0"
 postgresql = "42.7.4"
 
@@ -45,6 +46,12 @@ micrometer-core = { group = "io.micrometer", name = "micrometer-core" }
 postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
 flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { group = "org.flywaydb", name = "flyway-database-postgresql", version.ref = "flyway" }
+
+# Testing
+spring-security-test = { group = "org.springframework.security", name = "spring-security-test" }
+testcontainers-bom = { group = "org.testcontainers", name = "testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { group = "org.testcontainers", name = "postgresql", version.ref = "testcontainers" }
 
 # Lombok
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }

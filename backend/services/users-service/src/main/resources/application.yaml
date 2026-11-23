@@ -26,9 +26,35 @@ spring:
 server:
   port: 9020
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  metrics:
+    tags:
+      application: users-service
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      authzRedis:
+        register-health-indicator: true
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+
 core-platform:
   authorization:
-    tenant-mode: multi-tenant
+    tenant-mode: single-tenant
+    single-tenant:
+      tenant-id: 00000000-0000-0000-0000-000000000001
     caffeine:
       max-size: 10000
       ttl: 30s
+    internal-api:
+      allowed-clients:
+        - users-service
+    audit:
+      default-level: detailed

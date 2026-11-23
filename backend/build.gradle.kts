@@ -27,6 +27,7 @@ subprojects {
 
         tasks.withType<Test> {
             useJUnitPlatform()
+            environment("CORE_PLATFORM_DB_PASSWORD", System.getenv("CORE_PLATFORM_DB_PASSWORD") ?: "")
         }
     }
 }

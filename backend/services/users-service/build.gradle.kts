@@ -20,4 +20,8 @@ dependencies {
     annotationProcessor(libs.lombok)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.security.test)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

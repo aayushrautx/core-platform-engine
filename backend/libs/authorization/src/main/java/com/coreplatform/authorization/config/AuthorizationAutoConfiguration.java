@@ -38,16 +38,13 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import java.util.Collections;
 import java.util.List;
 
-@AutoConfiguration
+@AutoConfiguration(after = {
+        org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class
+})
 @EnableConfigurationProperties(AuthorizationProperties.class)
 @EnableAspectJAutoProxy
 public class AuthorizationAutoConfiguration {
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ObjectMapper authorizationObjectMapper() {
-        return new ObjectMapper();
-    }
 
     @Bean
     public CaffeineAuthorizationCache caffeineAuthorizationCache(AuthorizationProperties properties) {
@@ -66,9 +63,9 @@ public class AuthorizationAutoConfiguration {
     @Bean
     @ConditionalOnBean(RedisConnectionFactory.class)
     public AuthorizationRedisService authorizationRedisService(StringRedisTemplate authorizationRedisTemplate,
-                                                               ObjectMapper authorizationObjectMapper,
+                                                               ObjectMapper objectMapper,
                                                                MeterRegistry meterRegistry) {
-        return new AuthorizationRedisService(authorizationRedisTemplate, authorizationObjectMapper, meterRegistry);
+        return new AuthorizationRedisService(authorizationRedisTemplate, objectMapper, meterRegistry);
     }
 
     @Bean
@@ -77,14 +74,14 @@ public class AuthorizationAutoConfiguration {
             AuthorizationRedisService authorizationRedisService,
             CaffeineAuthorizationCache caffeineAuthorizationCache,
             FallbackDataLoader fallbackDataLoader,
-            ObjectMapper authorizationObjectMapper,
+            ObjectMapper objectMapper,
             CircuitBreakerRegistry circuitBreakerRegistry,
             MeterRegistry meterRegistry) {
         return new RedisAuthorizationDataProvider(
                 authorizationRedisService,
                 caffeineAuthorizationCache,
                 fallbackDataLoader,
-                authorizationObjectMapper,
+                objectMapper,
                 circuitBreakerRegistry,
                 meterRegistry
         );
@@ -93,8 +90,8 @@ public class AuthorizationAutoConfiguration {
     @Bean
     @ConditionalOnBean(RedisConnectionFactory.class)
     public CacheInvalidationListener cacheInvalidationListener(CaffeineAuthorizationCache caffeineAuthorizationCache,
-                                                                ObjectMapper authorizationObjectMapper) {
-        return new CacheInvalidationListener(caffeineAuthorizationCache, authorizationObjectMapper);
+                                                                ObjectMapper objectMapper) {
+        return new CacheInvalidationListener(caffeineAuthorizationCache, objectMapper);
     }
 
     @Bean
@@ -112,8 +109,8 @@ public class AuthorizationAutoConfiguration {
     @Bean
     @ConditionalOnBean(RedisConnectionFactory.class)
     public RedisChangePublisher redisChangePublisher(AuthorizationRedisService authorizationRedisService,
-                                                     ObjectMapper authorizationObjectMapper) {
-        return new RedisChangePublisher(authorizationRedisService, authorizationObjectMapper);
+                                                     ObjectMapper objectMapper) {
+        return new RedisChangePublisher(authorizationRedisService, objectMapper);
     }
 
     @Bean

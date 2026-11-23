@@ -26,6 +26,30 @@ spring:
             - Path=/api/users/**
           filters:
             - TokenRelay=
+        - id: roles-service
+          uri: http://localhost:9020
+          predicates:
+            - Path=/api/roles/**
+          filters:
+            - TokenRelay=
+        - id: permissions-service
+          uri: http://localhost:9020
+          predicates:
+            - Path=/api/permissions/**
+          filters:
+            - TokenRelay=
+        - id: service-accounts
+          uri: http://localhost:9020
+          predicates:
+            - Path=/api/service-accounts/**
+          filters:
+            - TokenRelay=
+        - id: users-service-actuator
+          uri: http://localhost:9020
+          predicates:
+            - Path=/api/internal/**
+          filters:
+            - TokenRelay=
 
 server:
   port: 9010

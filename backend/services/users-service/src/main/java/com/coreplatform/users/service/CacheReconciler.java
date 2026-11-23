@@ -10,6 +10,7 @@ import com.coreplatform.users.repository.ServiceAccountRepository;
 import com.coreplatform.users.repository.UserRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -38,7 +39,7 @@ public class CacheReconciler {
                             ServiceAccountRepository serviceAccountRepository,
                             AuthorizationRedisService redisService,
                             FallbackDataLoader fallbackDataLoader,
-                            StringRedisTemplate redisTemplate,
+                            @Qualifier("authorizationRedisTemplate") StringRedisTemplate redisTemplate,
                             MeterRegistry meterRegistry) {
         this.userRepository = userRepository;
         this.serviceAccountRepository = serviceAccountRepository;
