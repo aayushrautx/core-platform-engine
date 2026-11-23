@@ -1,6 +1,22 @@
 spring:
   application:
     name: users-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/core_platform_db
+    username: core_platform
+    password: ${CORE_PLATFORM_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${AUTHZ_REDIS_HOST:localhost}
+      port: ${AUTHZ_REDIS_PORT:6380}
   security:
     oauth2:
       resourceserver:
@@ -9,3 +25,10 @@ spring:
 
 server:
   port: 9020
+
+core-platform:
+  authorization:
+    tenant-mode: multi-tenant
+    caffeine:
+      max-size: 10000
+      ttl: 30s
