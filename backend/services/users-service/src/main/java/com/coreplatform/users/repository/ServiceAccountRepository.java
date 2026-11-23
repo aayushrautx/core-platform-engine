@@ -12,4 +12,8 @@ public interface ServiceAccountRepository extends JpaRepository<ServiceAccountEn
     Optional<ServiceAccountEntity> findByKeycloakSub(String keycloakSub);
 
     List<ServiceAccountEntity> findByTenantId(UUID tenantId);
+
+    List<ServiceAccountEntity> findByIsActiveTrue();
+
+    List<ServiceAccountEntity> findByIsActiveFalse();
 }

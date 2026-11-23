@@ -3,6 +3,8 @@ package com.coreplatform.authorization.cache;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,12 +25,17 @@ public class AuthorizationRedisService {
     private final ObjectMapper objectMapper;
     private final DefaultRedisScript<Long> populateScript;
     private final DefaultRedisScript<Long> invalidateScript;
+    private final Counter tombstoneRejectedCounter;
+    private final Counter tenantVersionBumpCounter;
 
-    public AuthorizationRedisService(StringRedisTemplate redisTemplate, ObjectMapper objectMapper) {
+    public AuthorizationRedisService(StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
+                                     MeterRegistry meterRegistry) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.populateScript = loadScript("lua/cache_populate.lua");
         this.invalidateScript = loadScript("lua/cache_invalidate.lua");
+        this.tombstoneRejectedCounter = meterRegistry.counter("authz.cache.tombstone.rejected");
+        this.tenantVersionBumpCounter = meterRegistry.counter("authz.tenant.version_bump");
     }
 
     public boolean populate(String key, Object value, long version) {
@@ -42,6 +49,7 @@ public class AuthorizationRedisService {
             );
             boolean written = result != null && result == 1L;
             if (!written) {
+                tombstoneRejectedCounter.increment();
                 log.debug("Cache populate rejected for key={} version={} (stale)", key, version);
             }
             return written;
@@ -103,6 +111,7 @@ public class AuthorizationRedisService {
         if (version == null) {
             throw new IllegalStateException("Failed to increment tenant version for " + tenantId);
         }
+        tenantVersionBumpCounter.increment();
         log.debug("Tenant version bumped tenantId={} version={}", tenantId, version);
         return version;
     }

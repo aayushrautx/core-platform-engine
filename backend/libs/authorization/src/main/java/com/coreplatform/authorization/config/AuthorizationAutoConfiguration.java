@@ -66,8 +66,9 @@ public class AuthorizationAutoConfiguration {
     @Bean
     @ConditionalOnBean(RedisConnectionFactory.class)
     public AuthorizationRedisService authorizationRedisService(StringRedisTemplate authorizationRedisTemplate,
-                                                               ObjectMapper authorizationObjectMapper) {
-        return new AuthorizationRedisService(authorizationRedisTemplate, authorizationObjectMapper);
+                                                               ObjectMapper authorizationObjectMapper,
+                                                               MeterRegistry meterRegistry) {
+        return new AuthorizationRedisService(authorizationRedisTemplate, authorizationObjectMapper, meterRegistry);
     }
 
     @Bean
@@ -77,13 +78,15 @@ public class AuthorizationAutoConfiguration {
             CaffeineAuthorizationCache caffeineAuthorizationCache,
             FallbackDataLoader fallbackDataLoader,
             ObjectMapper authorizationObjectMapper,
-            CircuitBreakerRegistry circuitBreakerRegistry) {
+            CircuitBreakerRegistry circuitBreakerRegistry,
+            MeterRegistry meterRegistry) {
         return new RedisAuthorizationDataProvider(
                 authorizationRedisService,
                 caffeineAuthorizationCache,
                 fallbackDataLoader,
                 authorizationObjectMapper,
-                circuitBreakerRegistry
+                circuitBreakerRegistry,
+                meterRegistry
         );
     }
 
@@ -159,8 +162,9 @@ public class AuthorizationAutoConfiguration {
                                                     TenantGuard tenantGuard,
                                                     RbacEvaluator rbacEvaluator,
                                                     ScopeEnforcer scopeEnforcer,
-                                                    AuditLogger auditLogger) {
-        return new AuthorizationEngine(authorizationDataProvider, tenantGuard, rbacEvaluator, scopeEnforcer, auditLogger);
+                                                    AuditLogger auditLogger,
+                                                    MeterRegistry meterRegistry) {
+        return new AuthorizationEngine(authorizationDataProvider, tenantGuard, rbacEvaluator, scopeEnforcer, auditLogger, meterRegistry);
     }
 
     @Bean

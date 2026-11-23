@@ -13,6 +13,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
@@ -31,17 +33,22 @@ public class RedisAuthorizationDataProvider implements AuthorizationDataProvider
     private final FallbackDataLoader fallbackDataLoader;
     private final ObjectMapper objectMapper;
     private final CircuitBreaker circuitBreaker;
+    private final Counter fallbackCounter;
+    private final Counter freshnessRereadCounter;
 
     public RedisAuthorizationDataProvider(AuthorizationRedisService redisService,
                                           CaffeineAuthorizationCache caffeineCache,
                                           FallbackDataLoader fallbackDataLoader,
                                           ObjectMapper objectMapper,
-                                          CircuitBreakerRegistry circuitBreakerRegistry) {
+                                          CircuitBreakerRegistry circuitBreakerRegistry,
+                                          MeterRegistry meterRegistry) {
         this.redisService = redisService;
         this.caffeineCache = caffeineCache;
         this.fallbackDataLoader = fallbackDataLoader;
         this.objectMapper = objectMapper;
         this.circuitBreaker = circuitBreakerRegistry.circuitBreaker(CIRCUIT_BREAKER_NAME);
+        this.fallbackCounter = meterRegistry.counter("authz.cache.fallback");
+        this.freshnessRereadCounter = meterRegistry.counter("authz.freshness.redis_reread");
     }
 
     @Override
@@ -172,6 +179,7 @@ public class RedisAuthorizationDataProvider implements AuthorizationDataProvider
         }
         CacheEntry<T> cached = entry.get();
         if (cached.age().compareTo(freshness.getMaxStaleness()) > 0) {
+            freshnessRereadCounter.increment();
             log.debug("Caffeine entry stale for freshness={} key={}", freshness, key);
             return Optional.empty();
         }
@@ -204,6 +212,7 @@ public class RedisAuthorizationDataProvider implements AuthorizationDataProvider
     }
 
     private <T> Optional<T> fromFallback(String key, java.util.function.Supplier<Optional<T>> loader) {
+        fallbackCounter.increment();
         Optional<T> loaded;
         try {
             loaded = loader.get();

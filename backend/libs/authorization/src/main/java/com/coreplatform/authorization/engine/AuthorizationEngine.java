@@ -12,6 +12,8 @@ import com.coreplatform.authorization.provider.AuthorizationDataProvider;
 import com.coreplatform.authorization.rbac.RbacEvaluator;
 import com.coreplatform.authorization.rbac.RbacResult;
 import com.coreplatform.authorization.resolver.ScopeEnforcer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
@@ -25,27 +27,32 @@ public class AuthorizationEngine {
     private final RbacEvaluator rbacEvaluator;
     private final ScopeEnforcer scopeEnforcer;
     private final AuditLogger auditLogger;
+    private final Timer decisionTimer;
 
     public AuthorizationEngine(AuthorizationDataProvider dataProvider,
                                TenantGuard tenantGuard,
                                RbacEvaluator rbacEvaluator,
                                ScopeEnforcer scopeEnforcer,
-                               AuditLogger auditLogger) {
+                               AuditLogger auditLogger,
+                               MeterRegistry meterRegistry) {
         this.dataProvider = dataProvider;
         this.tenantGuard = tenantGuard;
         this.rbacEvaluator = rbacEvaluator;
         this.scopeEnforcer = scopeEnforcer;
         this.auditLogger = auditLogger;
+        this.decisionTimer = meterRegistry.timer("authz.decision.duration");
     }
 
     public AuthorizationDecision authorize(AuthorizationContext context) {
-        PrincipalType principalType = context.getPrincipal().getType();
+        return decisionTimer.record(() -> {
+            PrincipalType principalType = context.getPrincipal().getType();
 
-        if (principalType == PrincipalType.SERVICE_ACCOUNT) {
-            return authorizeServiceAccount(context);
-        }
+            if (principalType == PrincipalType.SERVICE_ACCOUNT) {
+                return authorizeServiceAccount(context);
+            }
 
-        return authorizeUser(context);
+            return authorizeUser(context);
+        });
     }
 
     private AuthorizationDecision authorizeUser(AuthorizationContext context) {

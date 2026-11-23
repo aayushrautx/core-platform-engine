@@ -59,6 +59,7 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
     private final Semaphore fallbackSemaphore;
     private final long queueTimeoutMs;
     private final Counter rejectedCounter;
+    private final Counter fallbackRequestsCounter;
     private final ConcurrentHashMap<String, CompletableFuture<?>> inFlight = new ConcurrentHashMap<>();
 
     public JpaFallbackDataLoader(UserRepository userRepository,
@@ -82,6 +83,7 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
         this.fallbackSemaphore = new Semaphore(properties.getFallback().getMaxConcurrent());
         this.queueTimeoutMs = properties.getFallback().getQueueTimeout().toMillis();
         this.rejectedCounter = meterRegistry.counter("authz.fallback.rejected");
+        this.fallbackRequestsCounter = meterRegistry.counter("authz.fallback.requests");
     }
 
     @Override
@@ -272,6 +274,7 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
     }
 
     private <T> T withBudget(Supplier<T> task) {
+        fallbackRequestsCounter.increment();
         try {
             if (!fallbackSemaphore.tryAcquire(queueTimeoutMs, TimeUnit.MILLISECONDS)) {
                 rejectedCounter.increment();
