@@ -57,6 +57,10 @@ public class CaffeineAuthorizationCache {
         return cache.stats();
     }
 
+    public Cache<String, CacheEntry<?>> unwrap() {
+        return cache;
+    }
+
     @Getter
     public static class CacheEntry<T> {
         private final T value;
