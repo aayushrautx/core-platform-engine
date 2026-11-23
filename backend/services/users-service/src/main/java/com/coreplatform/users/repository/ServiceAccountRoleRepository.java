@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface ServiceAccountRoleRepository extends JpaRepository<ServiceAccountRoleEntity, ServiceAccountRoleId> {
 
     List<ServiceAccountRoleEntity> findByServiceAccountId(UUID serviceAccountId);
+
+    void deleteByServiceAccountIdAndRoleId(UUID serviceAccountId, UUID roleId);
 }
