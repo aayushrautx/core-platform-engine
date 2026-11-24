@@ -50,11 +50,14 @@ core-platform:
     tenant-mode: single-tenant
     single-tenant:
       tenant-id: 00000000-0000-0000-0000-000000000001
+    bootstrap:
+      super-admin-sub: ${BOOTSTRAP_ADMIN_SUB:}
     caffeine:
       max-size: 10000
       ttl: 30s
     internal-api:
       allowed-clients:
         - users-service
+        - orders-service
     audit:
       default-level: detailed

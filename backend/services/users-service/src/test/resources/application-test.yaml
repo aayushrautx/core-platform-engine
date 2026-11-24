@@ -1,0 +1,54 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/core_platform_db
+    username: core_platform
+    password: ${CORE_PLATFORM_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: localhost
+      port: 6380
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9999/realms/test
+
+server:
+  port: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      authzRedis:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+
+core-platform:
+  authorization:
+    tenant-mode: single-tenant
+    single-tenant:
+      tenant-id: 00000000-0000-0000-0000-000000000001
+    caffeine:
+      max-size: 1000
+      ttl: 5s
+    internal-api:
+      allowed-clients:
+        - test-client
+        - users-service
+    audit:
+      default-level: detailed

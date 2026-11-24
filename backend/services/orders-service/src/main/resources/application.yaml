@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: orders-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/core_platform_db
+    username: core_platform
+    password: ${CORE_PLATFORM_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: orders
+    default-schema: orders
+  data:
+    redis:
+      host: ${AUTHZ_REDIS_HOST:localhost}
+      port: ${AUTHZ_REDIS_PORT:6380}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000/realms/core-platform
+
+server:
+  port: 9030
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  metrics:
+    tags:
+      application: orders-service
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      authzRedis:
+        register-health-indicator: true
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+
+core-platform:
+  authorization:
+    tenant-mode: single-tenant
+    single-tenant:
+      tenant-id: 00000000-0000-0000-0000-000000000001
+    caffeine:
+      max-size: 10000
+      ttl: 30s
+    internal-api:
+      base-url: ${USERS_SERVICE_URL:http://localhost:9020}
+      allowed-clients:
+        - orders-service
+    audit:
+      default-level: basic

@@ -25,6 +25,7 @@ import java.util.UUID;
 public class UserSyncFilter extends OncePerRequestFilter {
 
     private static final String DEFAULT_ROLE_NAME = "viewer";
+    private static final String SUPER_ADMIN_ROLE_NAME = "super_admin";
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -121,7 +122,11 @@ public class UserSyncFilter extends OncePerRequestFilter {
                     .build();
             userRepository.save(user);
 
-            roleRepository.findByTenantIdAndName(tenantId, DEFAULT_ROLE_NAME)
+            String roleName = isBootstrapSuperAdmin(jwt.getSubject())
+                    ? SUPER_ADMIN_ROLE_NAME
+                    : DEFAULT_ROLE_NAME;
+
+            roleRepository.findByTenantIdAndName(tenantId, roleName)
                     .ifPresent(role -> {
                         UserRoleEntity userRole = UserRoleEntity.builder()
                                 .userId(userId)
@@ -130,7 +135,16 @@ public class UserSyncFilter extends OncePerRequestFilter {
                                 .build();
                         userRoleRepository.save(userRole);
                     });
+
+            if (isBootstrapSuperAdmin(jwt.getSubject())) {
+                log.info("Bootstrap super-admin assigned to sub={}", jwt.getSubject());
+            }
         });
+    }
+
+    private boolean isBootstrapSuperAdmin(String sub) {
+        String bootstrapSub = properties.getBootstrap().getSuperAdminSub();
+        return bootstrapSub != null && !bootstrapSub.isBlank() && bootstrapSub.equals(sub);
     }
 
     private String extractUsername(Jwt jwt) {

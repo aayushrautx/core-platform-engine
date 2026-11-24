@@ -8,6 +8,8 @@ import com.coreplatform.authorization.model.ServiceAccountData;
 import com.coreplatform.authorization.model.UserAuthorizationData;
 import com.coreplatform.authorization.provider.FallbackDataLoader;
 import com.coreplatform.users.entity.PermissionEntity;
+import com.coreplatform.users.entity.PolicyEntity;
+import com.coreplatform.users.entity.PolicySetEntity;
 import com.coreplatform.users.entity.RoleEntity;
 import com.coreplatform.users.entity.RolePermissionEntity;
 import com.coreplatform.users.entity.ServiceAccountEntity;
@@ -15,6 +17,7 @@ import com.coreplatform.users.entity.ServiceAccountRoleEntity;
 import com.coreplatform.users.entity.UserEntity;
 import com.coreplatform.users.entity.UserRoleEntity;
 import com.coreplatform.users.repository.PermissionRepository;
+import com.coreplatform.users.repository.PolicySetRepository;
 import com.coreplatform.users.repository.RolePermissionRepository;
 import com.coreplatform.users.repository.RoleRepository;
 import com.coreplatform.users.repository.ServiceAccountRepository;
@@ -55,6 +58,7 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
     private final RolePermissionRepository rolePermissionRepository;
     private final UserRoleRepository userRoleRepository;
     private final ServiceAccountRoleRepository serviceAccountRoleRepository;
+    private final PolicySetRepository policySetRepository;
     private final AuthorizationRedisService redisService;
     private final Semaphore fallbackSemaphore;
     private final long queueTimeoutMs;
@@ -69,6 +73,7 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
                                   RolePermissionRepository rolePermissionRepository,
                                   UserRoleRepository userRoleRepository,
                                   ServiceAccountRoleRepository serviceAccountRoleRepository,
+                                  PolicySetRepository policySetRepository,
                                   AuthorizationRedisService redisService,
                                   AuthorizationProperties properties,
                                   MeterRegistry meterRegistry) {
@@ -79,6 +84,7 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
         this.rolePermissionRepository = rolePermissionRepository;
         this.userRoleRepository = userRoleRepository;
         this.serviceAccountRoleRepository = serviceAccountRoleRepository;
+        this.policySetRepository = policySetRepository;
         this.redisService = redisService;
         this.fallbackSemaphore = new Semaphore(properties.getFallback().getMaxConcurrent());
         this.queueTimeoutMs = properties.getFallback().getQueueTimeout().toMillis();
@@ -103,7 +109,42 @@ public class JpaFallbackDataLoader implements FallbackDataLoader {
 
     @Override
     public List<Policy> loadPolicies(UUID tenantId, String resource, String action) {
-        return Collections.emptyList();
+        String key = "policies:" + tenantId + ":" + resource + ":" + action;
+        return coalesce(key, () -> withBudget(() -> doLoadPolicies(tenantId, resource, action)));
+    }
+
+    private List<Policy> doLoadPolicies(UUID tenantId, String resource, String action) {
+        List<PolicySetEntity> policySets = policySetRepository.findActivePolicySets(tenantId, resource, action);
+        if (policySets.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Policy> policies = new ArrayList<>();
+        for (PolicySetEntity ps : policySets) {
+            if (ps.getPolicies() == null) continue;
+            for (PolicyEntity pe : ps.getPolicies()) {
+                if (!pe.isActive()) continue;
+                com.coreplatform.authorization.model.CombiningAlgorithm algorithm;
+                try {
+                    algorithm = com.coreplatform.authorization.model.CombiningAlgorithm.valueOf(ps.getCombiningStrategy());
+                } catch (Exception e) {
+                    algorithm = com.coreplatform.authorization.model.CombiningAlgorithm.DENY_OVERRIDES;
+                }
+                policies.add(Policy.builder()
+                        .id(pe.getId())
+                        .name(pe.getName())
+                        .effect(com.coreplatform.authorization.model.PolicyEffect.valueOf(pe.getEffect()))
+                        .overrideRbac(pe.isOverrideRbac())
+                        .conditionsJson(pe.getConditionsJson())
+                        .obligationsJson(pe.getObligationsJson())
+                        .priority(pe.getPriority())
+                        .isActive(pe.isActive())
+                        .version(pe.getVersion())
+                        .combiningAlgorithm(algorithm)
+                        .build());
+            }
+        }
+        return policies;
     }
 
     @Override

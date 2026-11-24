@@ -1,5 +1,7 @@
 package com.coreplatform.users.controller;
 
+import com.coreplatform.authorization.annotation.Authorize;
+import com.coreplatform.authorization.model.FreshnessLevel;
 import com.coreplatform.users.dto.UpdateUserRequest;
 import com.coreplatform.users.dto.UserResponse;
 import com.coreplatform.users.service.UserService;
@@ -30,6 +32,7 @@ public class UserController {
     }
 
     @GetMapping
+    @Authorize(resource = "user", action = "read", tenantIdParam = "tenantId")
     public ResponseEntity<List<UserResponse>> listUsers(@RequestParam UUID tenantId) {
         return ResponseEntity.ok(userService.listUsers(tenantId));
     }
@@ -42,6 +45,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @Authorize(resource = "user", action = "read", resourceIdParam = "id")
     public ResponseEntity<UserResponse> getUser(@PathVariable UUID id) {
         return userService.getUser(id)
                 .map(ResponseEntity::ok)
@@ -49,6 +53,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @Authorize(resource = "user", action = "update", resourceIdParam = "id", freshness = FreshnessLevel.MEDIUM)
     public ResponseEntity<UserResponse> updateUser(@PathVariable UUID id,
                                                     @RequestBody UpdateUserRequest request,
                                                     @AuthenticationPrincipal Jwt jwt) {
@@ -59,6 +64,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/status")
+    @Authorize(resource = "user", action = "delete", resourceIdParam = "id", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<UserResponse> updateUserStatus(@PathVariable UUID id,
                                                           @RequestBody Map<String, Boolean> body,
                                                           @AuthenticationPrincipal Jwt jwt) {

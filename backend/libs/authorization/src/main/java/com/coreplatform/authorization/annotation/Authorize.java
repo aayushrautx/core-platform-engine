@@ -17,5 +17,7 @@ public @interface Authorize {
 
     String resourceIdParam() default "";
 
+    String tenantIdParam() default "";
+
     FreshnessLevel freshness() default FreshnessLevel.LOW;
 }

@@ -9,11 +9,15 @@ import com.coreplatform.authorization.cache.RedisKeyBuilder;
 import com.coreplatform.authorization.engine.AuthorizationEngine;
 import com.coreplatform.authorization.event.RedisChangePublisher;
 import com.coreplatform.authorization.guard.TenantGuard;
+import com.coreplatform.authorization.policy.ConditionEvaluator;
+import com.coreplatform.authorization.policy.PolicyCompiler;
+import com.coreplatform.authorization.policy.PolicyEvaluator;
 import com.coreplatform.authorization.provider.AuthorizationDataProvider;
 import com.coreplatform.authorization.provider.FallbackDataLoader;
 import com.coreplatform.authorization.provider.RedisAuthorizationDataProvider;
 import com.coreplatform.authorization.rbac.RbacEvaluator;
 import com.coreplatform.authorization.resolver.AllScopeEvaluator;
+import com.coreplatform.authorization.resolver.DataScopeResolver;
 import com.coreplatform.authorization.resolver.DepartmentScopeEvaluator;
 import com.coreplatform.authorization.resolver.OrgScopeEvaluator;
 import com.coreplatform.authorization.resolver.OwnScopeEvaluator;
@@ -148,9 +152,34 @@ public class AuthorizationAutoConfiguration {
     }
 
     @Bean
+    public DataScopeResolver dataScopeResolver(List<ScopeEvaluator> evaluators) {
+        return new DataScopeResolver(evaluators);
+    }
+
+    @Bean
     @ConditionalOnBean(AuthorizationDataProvider.class)
     public RbacEvaluator rbacEvaluator(AuthorizationDataProvider authorizationDataProvider) {
         return new RbacEvaluator(authorizationDataProvider);
+    }
+
+    @Bean
+    public ConditionEvaluator conditionEvaluator() {
+        return new ConditionEvaluator();
+    }
+
+    @Bean
+    public PolicyCompiler policyCompiler(ObjectMapper objectMapper) {
+        return new PolicyCompiler(objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnBean(AuthorizationDataProvider.class)
+    public PolicyEvaluator policyEvaluator(AuthorizationDataProvider authorizationDataProvider,
+                                            PolicyCompiler policyCompiler,
+                                            ConditionEvaluator conditionEvaluator,
+                                            ObjectMapper objectMapper,
+                                            MeterRegistry meterRegistry) {
+        return new PolicyEvaluator(authorizationDataProvider, policyCompiler, conditionEvaluator, objectMapper, meterRegistry);
     }
 
     @Bean
@@ -159,9 +188,10 @@ public class AuthorizationAutoConfiguration {
                                                     TenantGuard tenantGuard,
                                                     RbacEvaluator rbacEvaluator,
                                                     ScopeEnforcer scopeEnforcer,
+                                                    PolicyEvaluator policyEvaluator,
                                                     AuditLogger auditLogger,
                                                     MeterRegistry meterRegistry) {
-        return new AuthorizationEngine(authorizationDataProvider, tenantGuard, rbacEvaluator, scopeEnforcer, auditLogger, meterRegistry);
+        return new AuthorizationEngine(authorizationDataProvider, tenantGuard, rbacEvaluator, scopeEnforcer, policyEvaluator, auditLogger, meterRegistry);
     }
 
     @Bean

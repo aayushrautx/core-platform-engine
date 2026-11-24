@@ -1,5 +1,7 @@
 package com.coreplatform.users.controller;
 
+import com.coreplatform.authorization.annotation.Authorize;
+import com.coreplatform.authorization.model.FreshnessLevel;
 import com.coreplatform.users.dto.AssignRoleRequest;
 import com.coreplatform.users.dto.CreateServiceAccountRequest;
 import com.coreplatform.users.dto.ServiceAccountResponse;
@@ -35,11 +37,13 @@ public class ServiceAccountController {
     }
 
     @GetMapping
+    @Authorize(resource = "service_account", action = "read", tenantIdParam = "tenantId")
     public ResponseEntity<List<ServiceAccountResponse>> listServiceAccounts(@RequestParam UUID tenantId) {
         return ResponseEntity.ok(serviceAccountService.listServiceAccounts(tenantId));
     }
 
     @PostMapping
+    @Authorize(resource = "service_account", action = "create", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<ServiceAccountResponse> createServiceAccount(@RequestBody CreateServiceAccountRequest request,
                                                                         @AuthenticationPrincipal Jwt jwt) {
         UUID actorId = resolveActorId(jwt);
@@ -47,6 +51,7 @@ public class ServiceAccountController {
     }
 
     @PostMapping("/{id}/roles")
+    @Authorize(resource = "service_account", action = "update", resourceIdParam = "id", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<Void> assignRole(@PathVariable UUID id,
                                             @RequestBody AssignRoleRequest request,
                                             @AuthenticationPrincipal Jwt jwt) {
@@ -56,6 +61,7 @@ public class ServiceAccountController {
     }
 
     @DeleteMapping("/{id}/roles/{roleId}")
+    @Authorize(resource = "service_account", action = "update", resourceIdParam = "id", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<Void> removeRole(@PathVariable UUID id,
                                             @PathVariable UUID roleId,
                                             @AuthenticationPrincipal Jwt jwt) {

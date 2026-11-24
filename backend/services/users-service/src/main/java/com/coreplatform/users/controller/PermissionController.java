@@ -1,5 +1,7 @@
 package com.coreplatform.users.controller;
 
+import com.coreplatform.authorization.annotation.Authorize;
+import com.coreplatform.authorization.model.FreshnessLevel;
 import com.coreplatform.users.dto.CreatePermissionRequest;
 import com.coreplatform.users.dto.PermissionResponse;
 import com.coreplatform.users.dto.RolePermissionRequest;
@@ -33,16 +35,19 @@ public class PermissionController {
     }
 
     @GetMapping("/permissions")
+    @Authorize(resource = "permission", action = "read")
     public ResponseEntity<List<PermissionResponse>> listPermissions() {
         return ResponseEntity.ok(permissionService.listPermissions());
     }
 
     @PostMapping("/permissions")
+    @Authorize(resource = "permission", action = "create", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<PermissionResponse> createPermission(@RequestBody CreatePermissionRequest request) {
         return ResponseEntity.status(201).body(permissionService.createPermission(request));
     }
 
     @PostMapping("/roles/{roleId}/permissions")
+    @Authorize(resource = "role", action = "update", resourceIdParam = "roleId", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<Void> assignPermissionToRole(@PathVariable UUID roleId,
                                                         @RequestBody RolePermissionRequest request,
                                                         @AuthenticationPrincipal Jwt jwt) {
@@ -52,6 +57,7 @@ public class PermissionController {
     }
 
     @DeleteMapping("/roles/{roleId}/permissions/{permissionId}")
+    @Authorize(resource = "role", action = "update", resourceIdParam = "roleId", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<Void> removePermissionFromRole(@PathVariable UUID roleId,
                                                           @PathVariable UUID permissionId,
                                                           @AuthenticationPrincipal Jwt jwt) {

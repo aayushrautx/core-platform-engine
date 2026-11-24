@@ -52,6 +52,11 @@ public class AuthorizeAspect {
         PrincipalType principalType = determinePrincipalType(jwt);
         UUID tenantId = extractTenantId(jwt);
 
+        UUID paramTenantId = extractTenantIdFromParams(joinPoint, authorize);
+        if (paramTenantId != null) {
+            tenantId = paramTenantId;
+        }
+
         Object resourceId = extractResourceId(joinPoint, authorize);
         Map<String, Object> resourceAttributes = resolveResourceAttributes(authorize.resource(), resourceId);
 
@@ -91,6 +96,28 @@ public class AuthorizeAspect {
                 return UUID.fromString(tenantClaim);
             } catch (IllegalArgumentException e) {
                 log.warn("Invalid tenant_id claim in JWT: {}", tenantClaim);
+            }
+        }
+        return null;
+    }
+
+    private UUID extractTenantIdFromParams(ProceedingJoinPoint joinPoint, Authorize authorize) {
+        if (authorize.tenantIdParam().isEmpty()) {
+            return null;
+        }
+
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+        String[] paramNames = parameterNameDiscoverer.getParameterNames(method);
+
+        if (paramNames == null) {
+            return null;
+        }
+
+        Object[] args = joinPoint.getArgs();
+        for (int i = 0; i < paramNames.length; i++) {
+            if (paramNames[i].equals(authorize.tenantIdParam()) && args[i] instanceof UUID) {
+                return (UUID) args[i];
             }
         }
         return null;

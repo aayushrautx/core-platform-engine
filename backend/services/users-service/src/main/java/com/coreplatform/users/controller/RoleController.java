@@ -1,5 +1,7 @@
 package com.coreplatform.users.controller;
 
+import com.coreplatform.authorization.annotation.Authorize;
+import com.coreplatform.authorization.model.FreshnessLevel;
 import com.coreplatform.users.dto.CreateRoleRequest;
 import com.coreplatform.users.dto.RoleResponse;
 import com.coreplatform.users.dto.UpdateRoleRequest;
@@ -35,11 +37,13 @@ public class RoleController {
     }
 
     @GetMapping
+    @Authorize(resource = "role", action = "read", tenantIdParam = "tenantId")
     public ResponseEntity<List<RoleResponse>> listRoles(@RequestParam UUID tenantId) {
         return ResponseEntity.ok(roleService.listRoles(tenantId));
     }
 
     @GetMapping("/{id}")
+    @Authorize(resource = "role", action = "read", resourceIdParam = "id")
     public ResponseEntity<RoleResponse> getRole(@PathVariable UUID id) {
         return roleService.getRole(id)
                 .map(ResponseEntity::ok)
@@ -47,6 +51,7 @@ public class RoleController {
     }
 
     @PostMapping
+    @Authorize(resource = "role", action = "create", tenantIdParam = "tenantId", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<RoleResponse> createRole(@RequestBody CreateRoleRequest request,
                                                     @RequestParam UUID tenantId,
                                                     @AuthenticationPrincipal Jwt jwt) {
@@ -56,6 +61,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
+    @Authorize(resource = "role", action = "update", resourceIdParam = "id", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<RoleResponse> updateRole(@PathVariable UUID id,
                                                     @RequestBody UpdateRoleRequest request,
                                                     @AuthenticationPrincipal Jwt jwt) {
@@ -66,6 +72,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
+    @Authorize(resource = "role", action = "delete", resourceIdParam = "id", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<RoleResponse> deleteRole(@PathVariable UUID id,
                                                     @AuthenticationPrincipal Jwt jwt) {
         UUID actorId = resolveActorId(jwt);

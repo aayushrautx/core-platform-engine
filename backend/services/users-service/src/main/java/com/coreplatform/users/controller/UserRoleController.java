@@ -1,5 +1,7 @@
 package com.coreplatform.users.controller;
 
+import com.coreplatform.authorization.annotation.Authorize;
+import com.coreplatform.authorization.model.FreshnessLevel;
 import com.coreplatform.users.dto.AssignRoleRequest;
 import com.coreplatform.users.dto.RoleResponse;
 import com.coreplatform.users.dto.UserResponse;
@@ -32,11 +34,13 @@ public class UserRoleController {
     }
 
     @GetMapping
+    @Authorize(resource = "role", action = "read")
     public ResponseEntity<List<RoleResponse>> getUserRoles(@PathVariable UUID userId) {
         return ResponseEntity.ok(userRoleService.getUserRoles(userId));
     }
 
     @PostMapping
+    @Authorize(resource = "role", action = "assign", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<Void> assignRole(@PathVariable UUID userId,
                                             @RequestBody AssignRoleRequest request,
                                             @AuthenticationPrincipal Jwt jwt) {
@@ -46,6 +50,7 @@ public class UserRoleController {
     }
 
     @DeleteMapping("/{roleId}")
+    @Authorize(resource = "role", action = "assign", freshness = FreshnessLevel.HIGH)
     public ResponseEntity<Void> removeRole(@PathVariable UUID userId,
                                             @PathVariable UUID roleId,
                                             @AuthenticationPrincipal Jwt jwt) {

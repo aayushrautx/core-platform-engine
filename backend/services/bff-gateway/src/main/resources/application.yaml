@@ -44,6 +44,24 @@ spring:
             - Path=/api/service-accounts/**
           filters:
             - TokenRelay=
+        - id: orders-service
+          uri: http://localhost:9030
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - TokenRelay=
+        - id: policy-sets
+          uri: http://localhost:9020
+          predicates:
+            - Path=/api/policy-sets/**
+          filters:
+            - TokenRelay=
+        - id: authorization
+          uri: http://localhost:9020
+          predicates:
+            - Path=/api/authorization/**
+          filters:
+            - TokenRelay=
         - id: users-service-actuator
           uri: http://localhost:9020
           predicates:

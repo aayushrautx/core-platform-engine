@@ -84,6 +84,7 @@ public class AuthorizationProperties {
     @Getter
     @Setter
     public static class InternalApi {
+        private String baseUrl;
         private List<String> allowedClients = List.of();
     }
 

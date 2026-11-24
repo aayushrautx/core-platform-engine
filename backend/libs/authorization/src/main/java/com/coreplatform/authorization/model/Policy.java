@@ -24,4 +24,5 @@ public class Policy {
     private int priority;
     private boolean isActive;
     private long version;
+    private CombiningAlgorithm combiningAlgorithm;
 }
