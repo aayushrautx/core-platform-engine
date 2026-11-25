@@ -74,6 +74,14 @@ public class AuthorizationProperties {
 
     @Getter
     @Setter
+    public static class RedisConfig {
+        private Duration cacheTtl = Duration.ofHours(1);
+    }
+
+    private RedisConfig redis = new RedisConfig();
+
+    @Getter
+    @Setter
     public static class Fallback {
         private int maxConcurrent = 20;
         private int maxQps = 100;

@@ -27,15 +27,17 @@ public class AuthorizationRedisService {
     private final DefaultRedisScript<Long> invalidateScript;
     private final Counter tombstoneRejectedCounter;
     private final Counter tenantVersionBumpCounter;
+    private final long cacheTtlSeconds;
 
     public AuthorizationRedisService(StringRedisTemplate redisTemplate, ObjectMapper objectMapper,
-                                     MeterRegistry meterRegistry) {
+                                     MeterRegistry meterRegistry, long cacheTtlSeconds) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.populateScript = loadScript("lua/cache_populate.lua");
         this.invalidateScript = loadScript("lua/cache_invalidate.lua");
         this.tombstoneRejectedCounter = meterRegistry.counter("authz.cache.tombstone.rejected");
         this.tenantVersionBumpCounter = meterRegistry.counter("authz.tenant.version_bump");
+        this.cacheTtlSeconds = cacheTtlSeconds;
     }
 
     public boolean populate(String key, Object value, long version) {
@@ -45,7 +47,8 @@ public class AuthorizationRedisService {
                     populateScript,
                     Collections.singletonList(key),
                     json,
-                    String.valueOf(version)
+                    String.valueOf(version),
+                    String.valueOf(cacheTtlSeconds)
             );
             boolean written = result != null && result == 1L;
             if (!written) {

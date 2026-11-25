@@ -68,8 +68,10 @@ public class AuthorizationAutoConfiguration {
     @ConditionalOnBean(RedisConnectionFactory.class)
     public AuthorizationRedisService authorizationRedisService(StringRedisTemplate authorizationRedisTemplate,
                                                                ObjectMapper objectMapper,
-                                                               MeterRegistry meterRegistry) {
-        return new AuthorizationRedisService(authorizationRedisTemplate, objectMapper, meterRegistry);
+                                                               MeterRegistry meterRegistry,
+                                                               AuthorizationProperties properties) {
+        return new AuthorizationRedisService(authorizationRedisTemplate, objectMapper, meterRegistry,
+                properties.getRedis().getCacheTtl().toSeconds());
     }
 
     @Bean

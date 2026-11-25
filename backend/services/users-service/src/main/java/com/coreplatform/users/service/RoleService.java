@@ -47,7 +47,7 @@ public class RoleService {
     }
 
     public List<RoleResponse> listRoles(UUID tenantId) {
-        return roleRepository.findByTenantId(tenantId).stream()
+        return roleRepository.findByTenantIdAndIsActiveTrue(tenantId).stream()
                 .map(RoleResponse::from)
                 .toList();
     }

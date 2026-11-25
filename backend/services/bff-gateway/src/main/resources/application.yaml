@@ -72,3 +72,6 @@ spring:
 server:
   port: 9010
 
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+

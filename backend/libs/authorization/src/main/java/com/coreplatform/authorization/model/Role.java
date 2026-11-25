@@ -1,6 +1,7 @@
 package com.coreplatform.authorization.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,7 +24,9 @@ public class Role {
     private UUID parentRoleId;
     private List<String> permissionKeys;
     private Map<String, String> scopeByPermission;
+    @JsonProperty("isSystem")
     private boolean isSystem;
+    @JsonProperty("isActive")
     private boolean isActive;
     private long version;
 }
