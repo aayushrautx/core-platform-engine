@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.server.DefaultServerOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizationRequestResolver;
@@ -15,7 +16,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
-import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
 import org.springframework.security.web.server.csrf.CsrfToken;
@@ -25,6 +26,7 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +38,9 @@ public class SecurityConfig {
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
+
+    @Value("${app.users-service-url:http://localhost:9020}")
+    private String usersServiceUrl;
 
     @Bean
     public ServerOAuth2AuthorizationRequestResolver pkceAuthorizationRequestResolver(
@@ -49,7 +54,8 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http,
                                                          ReactiveClientRegistrationRepository clientRegistrationRepository,
-                                                         ServerOAuth2AuthorizationRequestResolver pkceAuthorizationRequestResolver) {
+                                                         ServerOAuth2AuthorizationRequestResolver pkceAuthorizationRequestResolver,
+                                                         ServerAuthenticationSuccessHandler userSyncSuccessHandler) {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
@@ -66,14 +72,21 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationRequestResolver(pkceAuthorizationRequestResolver)
-                        .authenticationSuccessHandler(
-                                new RedirectServerAuthenticationSuccessHandler(frontendUrl))
+                        .authenticationSuccessHandler(userSyncSuccessHandler)
                 )
                 .logout(logout -> logout
                         .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
                 );
 
         return http.build();
+    }
+
+    @Bean
+    public ServerAuthenticationSuccessHandler userSyncSuccessHandler(
+            WebClient.Builder webClientBuilder,
+            ServerOAuth2AuthorizedClientRepository authorizedClientRepository) {
+        return new UserSyncSuccessHandler(frontendUrl, webClientBuilder,
+                usersServiceUrl, authorizedClientRepository);
     }
 
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler(

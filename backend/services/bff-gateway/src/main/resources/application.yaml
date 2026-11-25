@@ -74,4 +74,5 @@ server:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  users-service-url: ${USERS_SERVICE_URL:http://localhost:9020}
 
